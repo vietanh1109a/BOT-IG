@@ -15,7 +15,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # Token bot
-TOKEN = "7165323948:AAGe59mWIO0IhabXkeXPUyBikXmYcMeaQj4"
+TOKEN = "7752361555:AAFwbow53uajQLWFDUr_RLPcc9nlGyIyeQ0"
 
 # URL API Instagram
 INSTAGRAM_API_URL = "https://subhatde.id.vn/instagram/post?q="
