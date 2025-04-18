@@ -576,7 +576,7 @@ def main() -> None:
     application.add_handler(CommandHandler("getpost", get_instagram_post))
     
     # Handler chỉ cho URL Instagram
-    instagram_url_filter = filters.TEXT & ~filters.COMMAND & filters.regex(r'instagram\.com')
+    instagram_url_filter = filters.TEXT & ~filters.COMMAND & filters.Regex(r'instagram\.com')
     application.add_handler(MessageHandler(instagram_url_filter, process_message))
     
     # Đăng ký handler xử lý lỗi
