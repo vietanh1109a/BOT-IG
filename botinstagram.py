@@ -31,26 +31,6 @@ MAX_MEDIA_GROUP_SIZE = 10
 # Thời gian đợi giữa các yêu cầu để tránh rate limits
 RATE_LIMIT_DELAY = 0.5
 
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Gửi tin nhắn khi lệnh /start được sử dụng."""
-    user = update.effective_user
-    await update.message.reply_html(
-        f"Hi {user.mention_html()}! Tôi là bot Instagram .\n"
-        f"Tôi có thể lấy bài đăng và thông tin người dùng Instagram.\n\n"
-        f"Sử dụng /getpost [username] - Lấy bài đăng Instagram của người dùng.\n"
-        f"Sử dụng /getinfo [username] - Lấy thông tin chi tiết về tài khoản Instagram."
-    )
-
-async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Gửi tin nhắn khi lệnh /help được sử dụng."""
-    await update.message.reply_text(
-        "Các lệnh:\n"
-        "/start - Khởi động bot\n"
-        "/help - Hiển thị hướng dẫn này\n"
-        "/getpost [username] - Lấy bài đăng Instagram của người dùng\n"
-        "/getinfo [username] - Lấy thông tin chi tiết về tài khoản Instagram\n\n"
-    )
-
 def format_number(num: Union[int, str, None]) -> str:
     """Định dạng số để dễ đọc."""
     if num is None:
@@ -563,11 +543,9 @@ async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             "/getpost [username] - Lấy bài đăng gần đây\n"
             "Hoặc gửi trực tiếp URL Instagram để tôi xử lý."
         )
-    elif "help" in message_text or "hướng dẫn" in message_text or "trợ giúp" in message_text:
-        await help_command(update, context)
     else:
         await update.message.reply_text(
-            "Tôi không hiểu lệnh đó. Sử dụng /help để xem các lệnh có sẵn."
+            "Tôi không hiểu lệnh đó. Sử dụng /getinfo hoặc /getpost để tương tác với bot."
         )
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -606,38 +584,34 @@ async def process_message(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
         await handle_instagram_url(update, context)
         return
     
-    # Kiểm tra xem có phải là username Instagram với @ không
-    username_match = re.search(r'^@([A-Za-z0-9._]+)$', message_text)
+    # Kiểm tra xem có phải là username với @ không
+    username_match = re.search(r'@([a-zA-Z0-9._]+)', message_text)
     if username_match:
         username = username_match.group(1)
+        # Xử lý như lệnh /getinfo
         context.args = [username]
         await get_instagram_info(update, context)
         return
     
-    # Chuyển sang xử lý thông thường
+    # Nếu không phải URL hoặc username rõ ràng, xử lý như echo thông thường
     await echo(update, context)
 
 def main() -> None:
-    """Khởi động bot."""
+    """Hàm chính khởi động bot."""
     # Tạo ứng dụng
     application = Application.builder().token(TOKEN).build()
 
-    # Thêm các bộ xử lý lệnh
-    application.add_handler(CommandHandler("start", start))
-    application.add_handler(CommandHandler("help", help_command))
-    application.add_handler(CommandHandler("getpost", get_instagram_post))
+    # Đăng ký các handlers
     application.add_handler(CommandHandler("getinfo", get_instagram_info))
+    application.add_handler(CommandHandler("getpost", get_instagram_post))
     
-    # Thêm bộ xử lý cho tin nhắn văn bản
+    # Handler cho tin nhắn thông thường
     application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, process_message))
     
-    # Thêm bộ xử lý lỗi
+    # Đăng ký handler xử lý lỗi
     application.add_error_handler(error_handler)
 
-    # Thông báo khi bot bắt đầu
-    logger.info("Bot Instagram đã sẵn sàng và bắt đầu polling...")
-    
-    # Chạy bot cho đến khi người dùng nhấn Ctrl-C
+    # Khởi chạy bot
     application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 if __name__ == "__main__":
