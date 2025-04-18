@@ -527,26 +527,6 @@ async def handle_instagram_url(update: Update, context: ContextTypes.DEFAULT_TYP
             context.args = [username]
             await get_instagram_info(update, context)
             return
-    
-    # Nếu không phù hợp với bất kỳ pattern nào
-    await echo(update, context)
-
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Phản hồi tin nhắn người dùng."""
-    message_text = update.message.text.lower()
-    
-    # Kiểm tra một số từ khóa phổ biến để hướng dẫn người dùng
-    if any(keyword in message_text for keyword in ["instagram", "insta", "ig"]):
-        await update.message.reply_text(
-            "Tôi có thể giúp bạn với Instagram! Hãy thử các lệnh sau:\n"
-            "/getinfo [username] - Lấy thông tin tài khoản\n"
-            "/getpost [username] - Lấy bài đăng gần đây\n"
-            "Hoặc gửi trực tiếp URL Instagram để tôi xử lý."
-        )
-    else:
-        await update.message.reply_text(
-            "Tôi không hiểu lệnh đó. Sử dụng /getinfo hoặc /getpost để tương tác với bot."
-        )
 
 async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Xử lý lỗi."""
@@ -576,37 +556,28 @@ def extract_username_from_url(url: str) -> Optional[str]:
     return None
 
 async def process_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Xử lý tin nhắn văn bản từ người dùng."""
+    """Chỉ xử lý URL Instagram, bỏ qua các tin nhắn thông thường."""
     message_text = update.message.text
     
-    # Kiểm tra xem có phải là URL Instagram không
+    # Chỉ xử lý URL Instagram
     if "instagram.com" in message_text:
         await handle_instagram_url(update, context)
         return
     
-    # Kiểm tra xem có phải là username với @ không
-    username_match = re.search(r'@([a-zA-Z0-9._]+)', message_text)
-    if username_match:
-        username = username_match.group(1)
-        # Xử lý như lệnh /getinfo
-        context.args = [username]
-        await get_instagram_info(update, context)
-        return
-    
-    # Nếu không phải URL hoặc username rõ ràng, xử lý như echo thông thường
-    await echo(update, context)
+    # Bỏ qua tất cả các tin nhắn khác
 
 def main() -> None:
     """Hàm chính khởi động bot."""
     # Tạo ứng dụng
     application = Application.builder().token(TOKEN).build()
 
-    # Đăng ký các handlers
+    # Đăng ký các handlers cho lệnh
     application.add_handler(CommandHandler("getinfo", get_instagram_info))
     application.add_handler(CommandHandler("getpost", get_instagram_post))
     
-    # Handler cho tin nhắn thông thường
-    application.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, process_message))
+    # Handler chỉ cho URL Instagram
+    instagram_url_filter = filters.TEXT & ~filters.COMMAND & filters.regex(r'instagram\.com')
+    application.add_handler(MessageHandler(instagram_url_filter, process_message))
     
     # Đăng ký handler xử lý lỗi
     application.add_error_handler(error_handler)
